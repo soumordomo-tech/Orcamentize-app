@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamentize - Orçamentos e Materiais para Construção Civil</title>
+    <!-- PWA / App -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0369a1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- html2pdf.js CDN para Download Direto de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#035480',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        construction: {
+                            amber: '#f59e0b',
+                            amberDark: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbars for clean UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Print Optimized Styling */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 11pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .page-break-inside-avoid {
+                page-break-inside: avoid;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 12mm 15mm 12mm 15mm;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased flex flex-col">
+
+    <!-- Top Header / Bar -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-slate-900 font-black text-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-helmet-safety"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Orçamentize <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Gerador Profissional de Orçamentos e Listas de Materiais</p>
+                </div>
+            </div>
+
+            <!-- Action Toolbar Buttons -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="saveDraftToLocalStorage()" title="Salvar Rascunho" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-floppy-disk text-amber-400"></i>
+                    <span class="hidden sm:inline">Salvar</span>
+                </button>
+                <button onclick="loadDraftFromLocalStorage()" title="Carregar Rascunho" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-folder-open text-sky-400"></i>
+                    <span class="hidden sm:inline">Carregar</span>
+                </button>
+                <button onclick="resetBudgetForm()" title="Limpar Tudo" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-rose-300 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span class="hidden md:inline">Novo</span>
+                </button>
+                <button onclick="openExportModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded-lg text-xs sm:text-sm shadow-md transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Gerar PDF / Imprimir</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+    <!-- Modal: Gerar e Salvar PDF / Imprimir -->
+    <div id="modal-export-pdf" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm no-print flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
+                <h3 class="font-bold flex items-center gap-2 text-sm sm:text-base">
+                    <i class="fa-solid fa-file-pdf text-amber-400"></i> Exportar Orçamento
+                </h3>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Escolha como deseja obter seu orçamento:
+                </p>
+                
+                <!-- Botão 1: Download Direto de PDF -->
+                <button onclick="downloadPDF()" class="w-full p-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-between group text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-slate-950/10 flex items-center justify-center text-slate-950 text-xl">
+                            <i class="fa-solid fa-download"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold">Baixar Arquivo PDF (.pdf)</p>
+                            <p class="text-[11px] text-slate-800 font-normal">Gera e baixa o arquivo PDF direto no seu dispositivo</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-60 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+
+                <!-- Botão 2: Abrir Impressão do Navegador -->
+                <button onclick="triggerNativePrint()" class="w-full p-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl border border-slate-200 transition flex items-center justify-between group text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center text-slate-700 text-xl">
+                            <i class="fa-solid fa-print"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold">Abrir Janela de Impressão</p>
+                            <p class="text-[11px] text-slate-500 font-normal">Imprima diretamente em papel ou use a impressora do sistema</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Novo Profissional -->
+    <div id="modal-new-category" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm no-print flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800"><i class="fa-solid fa-user-plus text-brand-500 mr-2"></i>Novo Profissional</h3>
+                <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome da Especialidade / Categoria</label>
+                    <input type="text" id="newCategoryName" placeholder="Ex: Marceneiro, Vidraceiro..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+                <button onclick="saveNewCategory()" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg text-sm shadow-md transition">Salvar Categoria</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Novo Material -->
+    <div id="modal-new-material" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm no-print flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800"><i class="fa-solid fa-box-open text-emerald-500 mr-2"></i>Novo Material</h3>
+                <button onclick="closeMaterialModal()" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Material / Serviço</label>
+                    <input type="text" id="newMatDesc" placeholder="Ex: Cimento Cola 20kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Unidade</label>
+                    <select id="newMatUnit" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="un">un (Unidade)</option>
+                        <option value="saco">saco (Saco)</option>
+                        <option value="lata">lata (Lata)</option>
+                        <option value="rolo">rolo (Rolo)</option>
+                        <option value="m">m (Metro)</option>
+                        <option value="m²">m² (M. Quadrado)</option>
+                        <option value="m³">m³ (M. Cúbico)</option>
+                        <option value="kg">kg (Quilo)</option>
+                        <option value="barra">barra (Barra)</option>
+                        <option value="cx">cx (Caixa)</option>
+                        <option value="balde">balde (Balde)</option>
+                    </select>
+                </div>
+                <button onclick="saveNewMaterial()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-sm shadow-md transition">Salvar Material</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Mobile View Toggle Tabs (Visible only on small screens) -->
+        <div class="flex bg-slate-200 p-1 rounded-xl mb-6 lg:hidden no-print">
+            <button id="tab-btn-editor" onclick="switchMobileTab('editor')" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-slate-900 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-brand-600"></i> Editor de Dados
+            </button>
+            <button id="tab-btn-preview" onclick="switchMobileTab('preview')" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-600 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-eye text-slate-500"></i> Pré-visualizar PDF
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: EDITOR FORM (6 cols) -->
+            <div id="editor-section" class="lg:col-span-6 space-y-6 no-print">
+                
+                <!-- 1. Dados do Profissional / Empresa -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-sm font-bold">1</span>
+                        <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-id-card text-brand-500"></i> Seus Dados (Profissional / Empresa)
+                        </h2>
+                    </div>
+
+                    <!-- Upload Logomarca / Foto -->
+                    <div class="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <label class="block text-xs font-semibold text-slate-600 mb-2">Logomarca ou Foto do Profissional</label>
+                        <div class="flex items-center gap-3">
+                            <input type="file" id="proLogoInput" accept="image/*" onchange="handleLogoUpload(event)" class="hidden">
+                            <button type="button" onclick="document.getElementById('proLogoInput').click()" class="px-3 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-image text-amber-500"></i>
+                                <span>Selecionar Foto / Logo</span>
+                            </button>
+                            <div id="editorLogoContainer" class="hidden flex items-center gap-2">
+                                <img id="editorLogoPreview" src="" alt="Logo Preview" class="h-10 w-10 object-cover rounded-lg border border-slate-300">
+                                <button type="button" onclick="removeLogo()" class="text-xs text-rose-600 hover:underline font-medium">Remover</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Profissional / Razão Social</label>
+                            <input type="text" id="proName" placeholder="Ex: Carlos Silva - Construção e Reformas" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Especialidade Principal</label>
+                            <select id="proSpecialty" onchange="handleSpecialtyChange(this)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                                <option value="Pintor Residencial e Comercial">Pintor</option>
+                                <option value="Pedreiro / Mestre de Obras">Pedreiro</option>
+                                <option value="Eletricista Residencial / Industrial">Eletricista</option>
+                                <option value="Encanador / Bombeiro Hidráulico">Encanador</option>
+                                <option value="Gesseiro / Drywaller">Gesseiro</option>
+                                <option value="Marmorista / Azulejista">Azulejista</option>
+                                <option value="Empreiteira / Multisserviços">Multisserviços / Geral</option>
+                                <option value="ADD_NEW" class="font-bold text-brand-600">+ Adicionar Nova Profissão...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone / WhatsApp</label>
+                            <input type="text" id="proPhone" placeholder="(11) 99999-9999" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail Profissional</label>
+                            <input type="email" id="proEmail" placeholder="contato@carlospinturas.com.br" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Dados do Cliente e da Obra -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-sm font-bold">2</span>
+                        <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-user-gear text-brand-500"></i> Dados do Cliente & Local da Obra
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Cliente</label>
+                            <input type="text" id="clientName" placeholder="Ex: Dra. Mariana Costa" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone do Cliente</label>
+                            <input type="text" id="clientPhone" placeholder="(11) 98888-8888" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Endereço / Local da Obra</label>
+                            <input type="text" id="clientAddress" placeholder="Rua das Flores, 123 - Apto 42 - Centro" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Data do Orçamento</label>
+                            <input type="date" id="budgetDate" onchange="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Validade da Proposta (Dias)</label>
+                            <div class="relative">
+                                <input type="number" id="budgetValidity" min="1" max="365" value="15" placeholder="Ex: 15" oninput="updateDocument()" class="w-full pr-12 pl-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                                <span class="absolute right-3 top-2 text-xs text-slate-400 font-bold pointer-events-none">dias</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Acelerador de Materiais (Atalhos por Categoria) -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">3</span>
+                            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-bolt text-amber-500"></i> Inserção Rápida de Materiais
+                            </h2>
+                        </div>
+                        <span class="text-xs text-slate-400 font-medium">Clique para adicionar</span>
+                    </div>
+
+                    <!-- Specialty Selector Chips -->
+                    <div class="flex flex-wrap gap-1.5 mb-4" id="preset-tabs">
+                        <!-- Loaded dynamically via renderCategoryTabs() -->
+                    </div>
+
+                    <!-- Shortcut Chips Container -->
+                    <div id="preset-chips-container" class="flex flex-wrap gap-2 min-h-[60px] p-2 bg-slate-50 rounded-xl border border-slate-200/60">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- 4. Tabela Dinâmica de Materiais -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-sm font-bold">4</span>
+                            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-boxes-packing text-brand-500"></i> Lista de Materiais
+                            </h2>
+                        </div>
+                        <button onclick="addNewBlankItem()" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Novo Item
+                        </button>
+                    </div>
+
+                    <!-- Items Table / Form -->
+                    <div class="space-y-3" id="items-editor-list">
+                        <!-- Dynamic Material Rows inserted here -->
+                    </div>
+
+                    <div id="empty-items-notice" class="hidden text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-box-open text-3xl mb-2"></i>
+                        <p class="text-xs">Nenhum material adicionado ainda. Use os atalhos acima ou clique em "Novo Item".</p>
+                    </div>
+                </div>
+
+                <!-- 5. Mão de Obra e Condições -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-sm font-bold">5</span>
+                        <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-brand-500"></i> Mão de Obra e Condições
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor do Serviço / Mão de Obra (R$)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">R$</span>
+                                <input type="number" id="laborCost" step="0.01" min="0" placeholder="0.00" value="0.00" oninput="updateDocument()" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Prazo Estimado de Execução</label>
+                            <input type="text" id="executionTime" placeholder="Ex: 5 dias úteis" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Condições de Pagamento</label>
+                            <input type="text" id="paymentTerms" placeholder="Ex: 50% de entrada na assinatura e 50% na entrega da obra" oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Observações Adicionais / Garantia</label>
+                            <textarea id="budgetNotes" rows="2" placeholder="Ex: Material não incluso na mão de obra. Garantia de 6 meses nos serviços executados." oninput="updateDocument()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: LIVE PDF PREVIEW (6 cols) -->
+            <div id="preview-section" class="lg:col-span-6 w-full hidden lg:block">
+                
+                <div class="sticky top-20">
+                    <div class="flex items-center justify-between mb-3 no-print">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                            <i class="fa-solid fa-file-contract text-brand-600"></i> Pré-visualização do Documento
+                        </span>
+                        <span class="text-xs text-slate-400">A4 • Formato Oficial</span>
+                    </div>
+
+                    <!-- PDF Paper Document Layout Container -->
+                    <div class="bg-white rounded-xl shadow-xl border border-slate-200 p-6 sm:p-8 text-slate-800 print-container font-sans text-xs sm:text-sm transition-all" id="printable-area">
+                        
+                        <!-- Document Header -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-slate-800 pb-5 mb-5 gap-4">
+                            <div class="flex items-start sm:items-center gap-4">
+                                <!-- Preview Logo -->
+                                <img id="previewProLogo" class="max-h-16 max-w-[140px] object-contain hidden rounded-md" src="" alt="Logo">
+                                <div>
+                                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase" id="previewProName">CARLOS SILVA CONSTRUÇÕES</h2>
+                                    <p class="text-xs font-semibold text-amber-600 uppercase tracking-wide" id="previewProSpecialty">Pintor Residencial e Comercial</p>
+                                    <div class="mt-2 text-xs text-slate-600 space-y-0.5">
+                                        <p id="previewProPhone"><i class="fa-solid fa-phone text-slate-400 mr-1.5"></i> (11) 99999-9999</p>
+                                        <p id="previewProEmail"><i class="fa-solid fa-envelope text-slate-400 mr-1.5"></i> contato@carlospinturas.com.br</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-right w-full sm:w-auto min-w-[160px]">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">ORÇAMENTO</span>
+                                <span class="text-lg font-black text-slate-900 block" id="previewDocId">#ORC-2026-001</span>
+                                <p class="text-[11px] text-slate-500 mt-1">Data: <span id="previewDate" class="font-medium">28/09/2026</span></p>
+                                <p class="text-[11px] text-slate-500">Validade: <span id="previewValidity" class="font-medium">15 dias</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Client Info Box -->
+                        <div class="bg-slate-50 rounded-lg p-3.5 border border-slate-200 mb-5">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 border-b border-slate-200/80 pb-1">
+                                Dados do Cliente & Local da Obra
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div><strong class="text-slate-600">Cliente:</strong> <span id="previewClientName" class="font-medium text-slate-900">Não informado</span></div>
+                                <div><strong class="text-slate-600">Telefone:</strong> <span id="previewClientPhone" class="font-medium text-slate-900">-</span></div>
+                                <div class="sm:col-span-2"><strong class="text-slate-600">Endereço da Obra:</strong> <span id="previewClientAddress" class="font-medium text-slate-900">-</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Itemized Table (Simplificada sem Valores Unitários) -->
+                        <div class="mb-5">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                Relação de Materiais Necessários
+                            </h3>
+                            
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-900 text-white text-[11px] uppercase tracking-wider font-semibold">
+                                        <th class="py-2 px-3 rounded-l-md w-2/3">Item / Descrição do Material</th>
+                                        <th class="py-2 px-2 text-center w-1/6">Quantidade</th>
+                                        <th class="py-2 px-3 text-center rounded-r-md w-1/6">Unidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewItemsTable" class="divide-y divide-slate-200 text-xs">
+                                    <!-- Dynamic Rows Rendered Here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary / Totals Breakdown -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6 page-break-inside-avoid">
+                            <div class="w-full sm:w-1/2 space-y-2 text-xs">
+                                <div class="p-3 bg-amber-50/60 rounded-lg border border-amber-200/80">
+                                    <h4 class="font-bold text-amber-900 mb-1 text-[11px] uppercase"><i class="fa-solid fa-handshake mr-1"></i> Condições de Pagamento</h4>
+                                    <p id="previewPaymentTerms" class="text-slate-700">50% na aprovação e 50% no término da obra.</p>
+                                </div>
+                                <div id="previewExecutionContainer" class="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    <p class="text-slate-600"><strong class="text-slate-800">Prazo Estimado:</strong> <span id="previewExecutionTime">5 dias úteis</span></p>
+                                </div>
+                            </div>
+
+                            <div class="w-full sm:w-1/2 bg-slate-900 text-white p-4 rounded-xl space-y-2 shadow-sm">
+                                <div class="flex justify-between items-center text-xs text-slate-300">
+                                    <span>Valor da Mão de Obra / Serviço:</span>
+                                    <span font-semibold id="previewLaborCost">R$ 0,00</span>
+                                </div>
+                                <div class="pt-2 border-t border-slate-700 flex justify-between items-center text-base font-black">
+                                    <span class="text-amber-400">VALOR TOTAL:</span>
+                                    <span class="text-amber-400 text-xl" id="previewGrandTotal">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extra Notes -->
+                        <div class="mb-6 page-break-inside-avoid" id="previewNotesContainer">
+                            <h4 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">Observações do Profissional</h4>
+                            <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200 italic" id="previewNotes">
+                                Sem observações adicionais.
+                            </p>
+                        </div>
+
+                        <!-- Signatures Box -->
+                        <div class="pt-8 mt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-center page-break-inside-avoid">
+                            <div>
+                                <div class="border-b border-slate-400 w-3/4 mx-auto mb-1"></div>
+                                <p class="text-[11px] font-bold text-slate-800" id="previewSigPro">Carlos Silva</p>
+                                <p class="text-[10px] text-slate-500">Profissional Responsável</p>
+                            </div>
+                            <div>
+                                <div class="border-b border-slate-400 w-3/4 mx-auto mb-1"></div>
+                                <p class="text-[11px] font-bold text-slate-800" id="previewSigClient">Cliente</p>
+                                <p class="text-[10px] text-slate-500">Aceite da Proposta</p>
+                            </div>
+                        </div>
+
+                        <!-- Footer disclaimer -->
+                        <div class="mt-6 text-center text-[10px] text-slate-400 no-print">
+                            Documento gerado por Orçamentize • Ferramenta para Profissionais da Construção
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Default Preset Items Database by Specialty (sem preços)
+        const DEFAULT_PRESETS = {
+            pintor: [
+                { desc: 'Tinta Acrílica Fosca Premium 18L', cat: 'Tinta', unit: 'lata' },
+                { desc: 'Fita Crepe 48mm x 50m', cat: 'Acessórios', unit: 'rolo' },
+                { desc: 'Lixa para Parede nº 150', cat: 'Abrasivos', unit: 'un' },
+                { desc: 'Selador Acrílico Pigmentado 18L', cat: 'Preparação', unit: 'lata' },
+                { desc: 'Massa Corrida PVA 25kg', cat: 'Massa', unit: 'saco' },
+                { desc: 'Rolo de Lã Antigota 23cm', cat: 'Ferramenta', unit: 'un' },
+                { desc: 'Pincel / Trincha 2 e meio polegadas', cat: 'Ferramenta', unit: 'un' },
+                { desc: 'Aguarrás Mineral 900ml', cat: 'Solvente', unit: 'un' },
+                { desc: 'Lona Plástica de Proteção 4x4m', cat: 'Proteção', unit: 'un' }
+            ],
+            pedreiro: [
+                { desc: 'Cimento CP-II 50kg', cat: 'Básico', unit: 'saco' },
+                { desc: 'Areia Média Lavada', cat: 'Agregado', unit: 'm³' },
+                { desc: 'Lajota / Tijolo 8 Furos (Milheiro)', cat: 'Alvenaria', unit: 'un' },
+                { desc: 'Vergalhão CA-50 3/8" (10mm) 12m', cat: 'Aço', unit: 'barra' },
+                { desc: 'Brita nº 1', cat: 'Agregado', unit: 'm³' },
+                { desc: 'Cal Hidratada 20kg', cat: 'Básico', unit: 'saco' },
+                { desc: 'Argamassa AC-III 20kg', cat: 'Argamassa', unit: 'saco' },
+                { desc: 'Malha Pop Leve 15x15cm 2x3m', cat: 'Aço', unit: 'un' }
+            ],
+            eletricista: [
+                { desc: 'Cabo Flexível 2,5mm² (Rolo 100m)', cat: 'Fios', unit: 'rolo' },
+                { desc: 'Fita Isolante 20 metros', cat: 'Isolamento', unit: 'un' },
+                { desc: 'Cabo PP 3x2,5mm² (por metro)', cat: 'Fios', unit: 'm' },
+                { desc: 'Disjuntor Termomagnético DIN 20A', cat: 'Proteção', unit: 'un' },
+                { desc: 'Caixa de Passagem 4x2 PVC', cat: 'Eletroduto', unit: 'un' },
+                { desc: 'Conduíte Corrugado Amarelo 3/4" 50m', cat: 'Eletroduto', unit: 'rolo' },
+                { desc: 'Módulo Tomada 10A com Espelho', cat: 'Acabamento', unit: 'un' }
+            ],
+            encanador: [
+                { desc: 'Tubo PVC Esgoto 100mm (6 metros)', cat: 'Tubos', unit: 'barra' },
+                { desc: 'Tubo PVC Soldável 25mm 3/4" (6 metros)', cat: 'Tubos', unit: 'barra' },
+                { desc: 'Joelho 90° PVC Soldável 25mm', cat: 'Conexão', unit: 'un' },
+                { desc: 'Adesivo Plástico / Cola PVC 175g', cat: 'Químico', unit: 'un' },
+                { desc: 'Fita Veda Rosca 18mm x 50m', cat: 'Vedação', unit: 'un' },
+                { desc: 'Caixa d\'Água Polietileno 1000L', cat: 'Reservatório', unit: 'un' },
+                { desc: 'Registro de Esfera 3/4" Soldável', cat: 'Válvula', unit: 'un' }
+            ],
+            gesseiro: [
+                { desc: 'Placa Gesso Drywall ST 1,20x2,40m', cat: 'Placa', unit: 'un' },
+                { desc: 'Perfil F530 para Drywall 3m', cat: 'Estrutura', unit: 'barra' },
+                { desc: 'Cantoneira L 25x30 3m', cat: 'Estrutura', unit: 'barra' },
+                { desc: 'Parafuso GN 25 Ponta Agulha (Cento)', cat: 'Fixação', unit: 'cx' },
+                { desc: 'Massa Pronta para Drywall 15kg', cat: 'Acabamento', unit: 'balde' },
+                { desc: 'Fita de Papel Microperfurada 150m', cat: 'Junta', unit: 'rolo' }
+            ]
+        };
+
+        let MATERIAL_PRESETS = {};
+        let currentCategory = 'pintor';
+
+        // Application State Data
+        let state = {
+            proLogo: '',
+            proName: 'Jeniclei Durans Barbosa',
+            proSpecialty: 'Eletricista Residencial / Industrial',
+            proPhone: '(11) 99887-6655',
+            proEmail: 'carlos.pintor@email.com',
+            clientName: 'Dra. Amanda Rodrigues',
+            clientPhone: '(11) 97123-4567',
+            clientAddress: 'Av. Paulista, 1500 - Ap 82, Bela Vista',
+            budgetDate: new Date().toISOString().split('T')[0],
+            budgetValidity: '15 dias',
+            laborCost: 1200.00,
+            executionTime: '4 dias úteis',
+            paymentTerms: '50% na contratação e 50% na entrega',
+            budgetNotes: 'Incluso lixamento, preparação e aplicação de 2 demãos. Proteção dos móveis e piso inclusa.',
+            items: [
+                { id: 1, desc: 'Tinta Acrílica Fosca Premium 18L', cat: 'Tinta', qty: 2, unit: 'lata' },
+                { id: 2, desc: 'Massa Corrida PVA 25kg', cat: 'Massa', qty: 3, unit: 'saco' },
+                { id: 3, desc: 'Fita Crepe 48mm x 50m', cat: 'Acessórios', qty: 4, unit: 'rolo' },
+                { id: 4, desc: 'Lixa para Parede nº 150', cat: 'Abrasivos', qty: 10, unit: 'un' }
+            ]
+        };
+
+        // Initialize App on DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPresets();
+            loadStateIntoInputs();
+            syncSpecialtyDropdown();
+            renderCategoryTabs();
+            renderPresetChips(currentCategory);
+            renderItemsEditor();
+            updateDocument();
+        });
+
+        // Logo Upload Handling
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    showToast('A imagem deve ter no máximo 2MB.', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.proLogo = e.target.result;
+                    updateLogoPreview();
+                    updateDocument();
+                    showToast('Logomarca adicionada!', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeLogo() {
+            state.proLogo = '';
+            document.getElementById('proLogoInput').value = '';
+            updateLogoPreview();
+            updateDocument();
+            showToast('Logomarca removida.', 'info');
+        }
+
+        function updateLogoPreview() {
+            const logoImg = document.getElementById('editorLogoPreview');
+            const logoContainer = document.getElementById('editorLogoContainer');
+            if (state.proLogo) {
+                logoImg.src = state.proLogo;
+                logoContainer.classList.remove('hidden');
+            } else {
+                logoContainer.classList.add('hidden');
+            }
+        }
+
+        // Add item from preset chips
+        function addPresetItemToBudget(preset) {
+            const newItem = {
+                id: Date.now(),
+                desc: preset.desc,
+                cat: preset.cat,
+                qty: 1,
+                unit: preset.unit
+            };
+            state.items.push(newItem);
+            renderItemsEditor();
+            updateDocument();
+            showToast(`"${preset.desc}" adicionado!`, 'success');
+        }
+
+        // Add blank item manually
+        function addNewBlankItem() {
+            const newItem = {
+                id: Date.now(),
+                desc: '',
+                cat: 'Geral',
+                qty: 1,
+                unit: 'un'
+            };
+            state.items.push(newItem);
+            renderItemsEditor();
+            updateDocument();
+            
+            setTimeout(() => {
+                const inputs = document.querySelectorAll('.item-desc-input');
+                if (inputs.length > 0) {
+                    inputs[inputs.length - 1].focus();
+                }
+            }, 50);
+        }
+
+        // Render dynamic table editor in Left Panel (Sem campo de Preço)
+        function renderItemsEditor() {
+            const container = document.getElementById('items-editor-list');
+            const emptyNotice = document.getElementById('empty-items-notice');
+            container.innerHTML = '';
+
+            if (state.items.length === 0) {
+                emptyNotice.classList.remove('hidden');
+                return;
+            } else {
+                emptyNotice.classList.add('hidden');
+            }
+
+            state.items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 hover:border-slate-300 transition';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400 w-5 text-center">${index + 1}</span>
+                        <input type="text" value="${escapeHtml(item.desc)}" placeholder="Descrição do Material" 
+                            oninput="updateItemField(${item.id}, 'desc', this.value)" 
+                            class="item-desc-input flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <button onclick="removeItem(${item.id})" title="Excluir Item" class="p-1.5 text-slate-400 hover:text-rose-600 transition">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pl-7">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-semibold mb-0.5">Quantidade</label>
+                            <input type="number" min="0.01" step="any" value="${item.qty}" 
+                                oninput="updateItemField(${item.id}, 'qty', parseFloat(this.value) || 0)" 
+                                class="w-full px-2 py-1 bg-white border border-slate-200 rounded-md text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-semibold mb-0.5">Unidade</label>
+                            <select onchange="updateItemField(${item.id}, 'unit', this.value)" 
+                                class="w-full px-2 py-1 bg-white border border-slate-200 rounded-md text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <option value="un" ${item.unit === 'un' ? 'selected' : ''}>un (Unidade)</option>
+                                <option value="saco" ${item.unit === 'saco' ? 'selected' : ''}>saco (Saco)</option>
+                                <option value="lata" ${item.unit === 'lata' ? 'selected' : ''}>lata (Lata)</option>
+                                <option value="rolo" ${item.unit === 'rolo' ? 'selected' : ''}>rolo (Rolo)</option>
+                                <option value="m" ${item.unit === 'm' ? 'selected' : ''}>m (Metro)</option>
+                                <option value="m²" ${item.unit === 'm²' ? 'selected' : ''}>m² (Metro Quadrado)</option>
+                                <option value="m³" ${item.unit === 'm³' ? 'selected' : ''}>m³ (Metro Cúbico)</option>
+                                <option value="kg" ${item.unit === 'kg' ? 'selected' : ''}>kg (Quilograma)</option>
+                                <option value="barra" ${item.unit === 'barra' ? 'selected' : ''}>barra (Barra)</option>
+                                <option value="cx" ${item.unit === 'cx' ? 'selected' : ''}>cx (Caixa)</option>
+                                <option value="balde" ${item.unit === 'balde' ? 'selected' : ''}>balde (Balde)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Carrega o estado atual (State) para dentro dos inputs HTML do editor
+        function loadStateIntoInputs() {
+            updateLogoPreview();
+            document.getElementById('proName').value = state.proName || '';
+            document.getElementById('proSpecialty').value = state.proSpecialty || '';
+            document.getElementById('proPhone').value = state.proPhone || '';
+            document.getElementById('proEmail').value = state.proEmail || '';
+
+            document.getElementById('clientName').value = state.clientName || '';
+            document.getElementById('clientPhone').value = state.clientPhone || '';
+            document.getElementById('clientAddress').value = state.clientAddress || '';
+            
+            document.getElementById('budgetDate').value = state.budgetDate || '';
+            
+            let validityVal = state.budgetValidity || '15';
+            if (typeof validityVal === 'string') {
+                validityVal = validityVal.replace(/\D/g, '') || '15';
+            }
+            document.getElementById('budgetValidity').value = validityVal;
+            
+            document.getElementById('laborCost').value = state.laborCost || 0;
+            document.getElementById('executionTime').value = state.executionTime || '';
+            document.getElementById('paymentTerms').value = state.paymentTerms || '';
+            document.getElementById('budgetNotes').value = state.budgetNotes || '';
+        }
+
+        // Sync State from inputs and calculate totals to update live document
+        function updateDocument() {
+            // Read UI inputs
+            state.proName = document.getElementById('proName').value || 'Sua Empresa / Nome';
+            state.proSpecialty = document.getElementById('proSpecialty').value;
+            state.proPhone = document.getElementById('proPhone').value || '-';
+            state.proEmail = document.getElementById('proEmail').value || '-';
+
+            state.clientName = document.getElementById('clientName').value || 'Não Informado';
+            state.clientPhone = document.getElementById('clientPhone').value || '-';
+            state.clientAddress = document.getElementById('clientAddress').value || '-';
+            
+            state.budgetDate = document.getElementById('budgetDate').value;
+            
+            const daysVal = document.getElementById('budgetValidity').value || '15';
+            state.budgetValidity = `${daysVal} ${parseInt(daysVal) === 1 ? 'dia' : 'dias'}`;
+            
+            state.laborCost = parseFloat(document.getElementById('laborCost').value) || 0;
+            state.executionTime = document.getElementById('executionTime').value || '-';
+            state.paymentTerms = document.getElementById('paymentTerms').value || 'A combinar';
+            state.budgetNotes = document.getElementById('budgetNotes').value;
+
+            // Render Preview Logo
+            const previewLogo = document.getElementById('previewProLogo');
+            if (state.proLogo) {
+                previewLogo.src = state.proLogo;
+                previewLogo.classList.remove('hidden');
+            } else {
+                previewLogo.classList.add('hidden');
+            }
+
+            // Render Preview Document Text
+            document.getElementById('previewProName').textContent = state.proName;
+            document.getElementById('previewProSpecialty').textContent = state.proSpecialty;
+            document.getElementById('previewProPhone').innerHTML = `<i class="fa-solid fa-phone text-slate-400 mr-1.5"></i> ${state.proPhone}`;
+            document.getElementById('previewProEmail').innerHTML = `<i class="fa-solid fa-envelope text-slate-400 mr-1.5"></i> ${state.proEmail}`;
+
+            document.getElementById('previewClientName').textContent = state.clientName;
+            document.getElementById('previewClientPhone').textContent = state.clientPhone;
+            document.getElementById('previewClientAddress').textContent = state.clientAddress;
+
+            document.getElementById('previewDate').textContent = formatDateBR(state.budgetDate);
+            document.getElementById('previewValidity').textContent = state.budgetValidity;
+
+            document.getElementById('previewPaymentTerms').textContent = state.paymentTerms;
+            document.getElementById('previewExecutionTime').textContent = state.executionTime;
+
+            if (state.budgetNotes.trim()) {
+                document.getElementById('previewNotesContainer').classList.remove('hidden');
+                document.getElementById('previewNotes').textContent = state.budgetNotes;
+            } else {
+                document.getElementById('previewNotesContainer').classList.add('hidden');
+            }
+
+            document.getElementById('previewSigPro').textContent = state.proName;
+            document.getElementById('previewSigClient').textContent = state.clientName;
+
+            // Render Document Items Table (Apenas Descrição, Quantidade e Unidade)
+            const tableBody = document.getElementById('previewItemsTable');
+            tableBody.innerHTML = '';
+
+            if (state.items.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-4 text-center text-slate-400 italic">
+                            Nenhum material cadastrado na lista.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                state.items.forEach((item, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = i % 2 === 0 ? 'bg-white' : 'bg-slate-50/70';
+                    tr.innerHTML = `
+                        <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(item.desc || 'Item sem nome')}</td>
+                        <td class="py-2 px-2 text-center font-semibold text-slate-800">${item.qty}</td>
+                        <td class="py-2 px-3 text-center text-slate-600 font-medium">${item.unit}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            // Totals (Baseados estritamente na Mão de Obra)
+            document.getElementById('previewLaborCost').textContent = formatCurrency(state.laborCost);
+            document.getElementById('previewGrandTotal').textContent = formatCurrency(state.laborCost);
+        }
+
+        function saveNewMaterial() {
+            const desc = document.getElementById('newMatDesc').value.trim();
+            const unit = document.getElementById('newMatUnit').value;
+
+            if (!desc) {
+                showToast('Digite o nome do material.', 'error');
+                return;
+            }
+
+            const newMat = {
+                desc: desc,
+                cat: 'Personalizado',
+                unit: unit
+            };
+
+            if (!MATERIAL_PRESETS[currentCategory]) {
+                MATERIAL_PRESETS[currentCategory] = [];
+            }
+            
+            MATERIAL_PRESETS[currentCategory].push(newMat);
+            savePresets();
+            closeMaterialModal();
+            renderPresetChips(currentCategory);
+            showToast(`"${desc}" salvo como atalho!`, 'success');
+        }
+
+        // --- FUNÇÕES FALTANTES E COMPLEMENTOS ---
+
+        // Armazenamento Local e Dados
+        function saveDraftToLocalStorage() {
+            localStorage.setItem('orcamentize_draft', JSON.stringify(state));
+            showToast('Rascunho salvo com sucesso!', 'success');
+        }
+
+        function loadDraftFromLocalStorage() {
+            const draft = localStorage.getItem('orcamentize_draft');
+            if (draft) {
+                state = JSON.parse(draft);
+                loadStateIntoInputs();
+                renderItemsEditor();
+                updateDocument();
+                showToast('Rascunho carregado!', 'success');
+            } else {
+                showToast('Nenhum rascunho encontrado.', 'info');
+            }
+        }
+
+        function resetBudgetForm() {
+            state.items = [];
+            state.budgetNotes = '';
+            state.laborCost = 0;
+            loadStateIntoInputs();
+            renderItemsEditor();
+            updateDocument();
+            showToast('Novo orçamento iniciado.', 'info');
+        }
+
+        function loadPresets() {
+            const savedPresets = localStorage.getItem('orcamentize_presets');
+            if (savedPresets) {
+                MATERIAL_PRESETS = JSON.parse(savedPresets);
+            } else {
+                MATERIAL_PRESETS = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
+            }
+        }
+
+        function savePresets() {
+            localStorage.setItem('orcamentize_presets', JSON.stringify(MATERIAL_PRESETS));
+        }
+
+        // Gerenciador do Select de Especialidade
+        function handleSpecialtyChange(select) {
+            if (select.value === 'ADD_NEW') {
+                openCategoryModal();
+                select.value = state.proSpecialty || 'Pintor Residencial e Comercial';
+            } else {
+                updateDocument();
+            }
+        }
+
+        // Renderização de Componentes da Interface
+        function renderCategoryTabs() {
+            const container = document.getElementById('preset-tabs');
+            container.innerHTML = '';
+            
+            Object.keys(MATERIAL_PRESETS).forEach(cat => {
+                const btn = document.createElement('div');
+                const isActive = cat === currentCategory;
+                btn.className = `group px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition flex items-center gap-1.5 cursor-pointer select-none ${isActive ? 'bg-amber-500 text-slate-900 shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`;
+                
+                const label = document.createElement('span');
+                label.textContent = cat;
+                label.onclick = () => {
+                    currentCategory = cat;
+                    renderCategoryTabs();
+                    renderPresetChips(cat);
+                };
+                btn.appendChild(label);
+
+                // Botão para excluir categoria/profissão (se houver mais de uma)
+                if (Object.keys(MATERIAL_PRESETS).length > 1) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.title = `Excluir categoria ${cat}`;
+                    deleteBtn.className = `opacity-60 hover:opacity-100 hover:text-rose-700 transition px-1 rounded ${isActive ? 'text-slate-950 hover:bg-amber-400' : 'text-slate-400 hover:bg-slate-100'}`;
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can text-[10px]"></i>';
+                    deleteBtn.onclick = (e) => deleteCategory(e, cat);
+                    btn.appendChild(deleteBtn);
+                }
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderPresetChips(category) {
+            const container = document.getElementById('preset-chips-container');
+            container.innerHTML = '';
+            
+            const presets = MATERIAL_PRESETS[category] || [];
+            
+            presets.forEach((preset, index) => {
+                const chip = document.createElement('div');
+                chip.className = 'px-3 py-1.5 bg-white border border-slate-200 hover:border-amber-400 hover:shadow-sm rounded-lg text-xs font-medium text-slate-700 transition flex items-center justify-between gap-2 group cursor-pointer';
+                
+                const addPart = document.createElement('span');
+                addPart.className = 'flex items-center gap-1.5';
+                addPart.innerHTML = `<i class="fa-solid fa-plus text-amber-500"></i> ${escapeHtml(preset.desc)}`;
+                addPart.onclick = () => addPresetItemToBudget(preset);
+
+                const delPart = document.createElement('button');
+                delPart.type = 'button';
+                delPart.title = 'Excluir atalho de material';
+                delPart.className = 'text-slate-300 hover:text-rose-600 p-0.5 rounded transition opacity-80 group-hover:opacity-100';
+                delPart.innerHTML = '<i class="fa-solid fa-xmark text-xs"></i>';
+                delPart.onclick = (e) => deletePresetItem(e, category, index);
+
+                chip.appendChild(addPart);
+                chip.appendChild(delPart);
+                container.appendChild(chip);
+            });
+
+            // Botão para Adicionar Material Personalizado
+            const addBtn = document.createElement('button');
+            addBtn.className = 'px-3 py-1.5 bg-brand-50 border border-brand-200 hover:bg-brand-100 rounded-lg text-xs font-bold text-brand-700 transition flex items-center gap-1.5 border-dashed';
+            addBtn.innerHTML = `<i class="fa-solid fa-plus"></i> Novo Material em ${category}`;
+            addBtn.onclick = () => openMaterialModal();
+            container.appendChild(addBtn);
+        }
+
+        // Excluir atalho de material salvo
+        function deletePresetItem(event, category, index) {
+            event.stopPropagation();
+            if (MATERIAL_PRESETS[category] && MATERIAL_PRESETS[category][index]) {
+                const removed = MATERIAL_PRESETS[category].splice(index, 1);
+                savePresets();
+                renderPresetChips(category);
+                showToast(`Material "${removed[0]?.desc || ''}" removido dos atalhos.`, 'info');
+            }
+        }
+
+        // Excluir categoria de profissão
+        function deleteCategory(event, catKey) {
+            event.stopPropagation();
+            if (Object.keys(MATERIAL_PRESETS).length <= 1) {
+                showToast('É necessário manter ao menos uma categoria.', 'error');
+                return;
+            }
+            
+            delete MATERIAL_PRESETS[catKey];
+            savePresets();
+            
+            if (currentCategory === catKey) {
+                currentCategory = Object.keys(MATERIAL_PRESETS)[0];
+            }
+            
+            renderCategoryTabs();
+            renderPresetChips(currentCategory);
+            syncSpecialtyDropdown();
+            showToast(`Profissão "${catKey}" removida com sucesso.`, 'info');
+        }
+
+        // Sincronizar Select de Especialidade com as Categorias de Materiais
+        function syncSpecialtyDropdown() {
+            const select = document.getElementById('proSpecialty');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '';
+            
+            const standardNames = {
+                pintor: 'Pintor Residencial e Comercial',
+                pedreiro: 'Pedreiro / Mestre de Obras',
+                eletricista: 'Eletricista Residencial / Industrial',
+                encanador: 'Encanador / Bombeiro Hidráulico',
+                gesseiro: 'Gesseiro / Drywaller'
+            };
+
+            Object.keys(MATERIAL_PRESETS).forEach(catKey => {
+                const option = document.createElement('option');
+                option.value = standardNames[catKey] || catKey.charAt(0).toUpperCase() + catKey.slice(1);
+                option.textContent = option.value;
+                select.appendChild(option);
+            });
+
+            const addNewOpt = document.createElement('option');
+            addNewOpt.value = 'ADD_NEW';
+            addNewOpt.className = 'font-bold text-brand-600';
+            addNewOpt.textContent = '+ Adicionar Nova Profissão...';
+            select.appendChild(addNewOpt);
+
+            if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // Modais
+        function openCategoryModal() {
+            document.getElementById('modal-new-category').classList.remove('hidden');
+            document.getElementById('newCategoryName').focus();
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('modal-new-category').classList.add('hidden');
+            document.getElementById('newCategoryName').value = '';
+        }
+
+        function saveNewCategory() {
+            const name = document.getElementById('newCategoryName').value.trim();
+            if (!name) {
+                showToast('Digite um nome para a profissão/categoria.', 'error');
+                return;
+            }
+            
+            const key = name.toLowerCase().replace(/[^a-z0-9\u00C0-\u00FF]/g, '');
+            if (MATERIAL_PRESETS[key]) {
+                showToast('Esta categoria já existe.', 'error');
+                return;
+            }
+            
+            MATERIAL_PRESETS[key] = [];
+            savePresets();
+            
+            currentCategory = key;
+            syncSpecialtyDropdown();
+            
+            const select = document.getElementById('proSpecialty');
+            select.value = name;
+            state.proSpecialty = name;
+            
+            renderCategoryTabs();
+            renderPresetChips(key);
+            
+            updateDocument();
+            closeCategoryModal();
+            showToast(`Profissão "${name}" adicionada!`, 'success');
+        }
+
+        function openMaterialModal() {
+            document.getElementById('modal-new-material').classList.remove('hidden');
+            document.getElementById('newMatDesc').focus();
+        }
+
+        function closeMaterialModal() {
+            document.getElementById('modal-new-material').classList.add('hidden');
+            document.getElementById('newMatDesc').value = '';
+        }
+
+        function openExportModal() {
+            document.getElementById('modal-export-pdf').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('modal-export-pdf').classList.add('hidden');
+        }
+
+        function downloadPDF() {
+            closeExportModal();
+            const element = document.getElementById('printable-area');
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     `Orcamento_${state.clientName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            const isNativeApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+            if (isNativeApp) {
+                // No app Android o download por link não funciona: salva o PDF e abre o menu de compartilhar
+                html2pdf().set(opt).from(element).outputPdf('datauristring').then(async (dataUri) => {
+                    try {
+                        const { Filesystem, Share } = window.Capacitor.Plugins;
+                        const base64 = dataUri.split(',')[1];
+                        const saved = await Filesystem.writeFile({
+                            path: opt.filename,
+                            data: base64,
+                            directory: 'CACHE'
+                        });
+                        await Share.share({
+                            title: 'Orçamento',
+                            files: [saved.uri],
+                            dialogTitle: 'Enviar / salvar orçamento'
+                        });
+                        showToast('PDF gerado com sucesso!', 'success');
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Não foi possível gerar o PDF.', 'error');
+                    }
+                });
+                return;
+            }
+            html2pdf().set(opt).from(element).save().then(() => {
+                showToast('PDF baixado com sucesso!', 'success');
+            });
+        }
+
+        function triggerNativePrint() {
+            closeExportModal();
+            window.print();
+        }
+
+        // Operações da Tabela / Itens
+        function updateItemField(id, field, value) {
+            const item = state.items.find(i => i.id === id);
+            if (item) {
+                item[field] = value;
+                updateDocument();
+            }
+        }
+
+        function removeItem(id) {
+            state.items = state.items.filter(i => i.id !== id);
+            renderItemsEditor();
+            updateDocument();
+        }
+
+        // Funções Utilitárias Gerais
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-slate-800';
+            let icon = '<i class="fa-solid fa-circle-info text-blue-400"></i>';
+            
+            if (type === 'success') {
+                icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+            } else if (type === 'error') {
+                icon = '<i class="fa-solid fa-circle-exclamation text-rose-400"></i>';
+            }
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 text-sm font-medium transform transition-all duration-300 translate-y-10 opacity-0`;
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return String(unsafe)
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function formatDateBR(dateString) {
+            if (!dateString) return '-';
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateString;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        }
+
+        function switchMobileTab(tab) {
+            const editor = document.getElementById('editor-section');
+            const preview = document.getElementById('preview-section');
+            const btnEditor = document.getElementById('tab-btn-editor');
+            const btnPreview = document.getElementById('tab-btn-preview');
+
+            if (tab === 'editor') {
+                editor.classList.remove('hidden');
+                preview.classList.add('hidden', 'lg:block');
+                btnEditor.classList.replace('text-slate-600', 'text-slate-900');
+                btnEditor.classList.add('bg-white', 'shadow-sm');
+                btnPreview.classList.remove('bg-white', 'shadow-sm');
+                btnPreview.classList.replace('text-slate-900', 'text-slate-600');
+            } else {
+                editor.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.classList.add('block');
+                btnPreview.classList.replace('text-slate-600', 'text-slate-900');
+                btnPreview.classList.add('bg-white', 'shadow-sm');
+                btnEditor.classList.remove('bg-white', 'shadow-sm');
+                btnEditor.classList.replace('text-slate-900', 'text-slate-600');
+            }
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
